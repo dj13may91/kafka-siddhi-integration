@@ -1,4 +1,4 @@
-package com.example.siddhi.kafka;
+package com.example.kafka;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +15,6 @@ public class Consumer {
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
 
-//    @KafkaListener(topics = "producer_topic", groupId = "group_id")
     public void sendToConsumer(long message) {
         this.kafkaTemplate.send(TOPIC, message + "");
     }

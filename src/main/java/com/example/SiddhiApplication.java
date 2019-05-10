@@ -1,4 +1,4 @@
-package com.example.siddhi;
+package com.example;
 
 import org.apache.log4j.BasicConfigurator;
 import org.springframework.boot.SpringApplication;

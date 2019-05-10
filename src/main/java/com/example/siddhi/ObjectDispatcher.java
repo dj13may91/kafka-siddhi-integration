@@ -1,6 +1,6 @@
-package com.example.siddhi.siddhi;
+package com.example.siddhi;
 
-import com.example.siddhi.kafka.Consumer;
+import com.example.kafka.Consumer;
 import io.siddhi.core.SiddhiAppRuntime;
 import io.siddhi.core.SiddhiManager;
 import io.siddhi.core.event.Event;

@@ -1,13 +1,11 @@
-package com.example.siddhi.kafka;
+package com.example.kafka;
 
-import com.example.siddhi.siddhi.ObjectDispatcher;
+import com.example.siddhi.ObjectDispatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping(value = "/kafka")
