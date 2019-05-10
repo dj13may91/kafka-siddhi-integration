@@ -2,10 +2,9 @@ package com.example.kafka;
 
 import com.example.siddhi.ObjectDispatcher;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import javax.ws.rs.Consumes;
 
 @RestController
 @RequestMapping(value = "/kafka")
@@ -20,10 +19,11 @@ public class KafkaController {
     ObjectDispatcher dispatcher;
 
     @PostMapping(value = "/publish")
-    public void sendMessageToKafkaTopic(@RequestParam("message") long input) {
+    @Consumes("application/json")
+    public void sendMessageToKafkaTopic(@RequestBody Person input) {
         this.producer.sendMessage(input);
         try {
-            dispatcher.getInputHandler().send(new Object[]{input});
+            dispatcher.getInputHandler().send(new Person[]{input});
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

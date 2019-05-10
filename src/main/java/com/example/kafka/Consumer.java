@@ -13,14 +13,17 @@ public class Consumer {
     private static final String TOPIC = "consumer_topic";
 
     @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private KafkaTemplate<String, Person> kafkaTemplate;
 
-    public void sendToConsumer(long message) {
-        this.kafkaTemplate.send(TOPIC, message + "");
+    public void sendToConsumer(Person message) {
+        System.out.print("Sending message to consumer topic: ");
+        System.out.println(message);
+        this.kafkaTemplate.send(TOPIC, message);
+        System.out.println("message sent to consumer topic successfully");
     }
 
-    @KafkaListener(topics = "consumer_topic")
-    public void consume(long message) {
-        logger.info(String.format("$$ -> Consumed Message -> %s", message));
-    }
+//    @KafkaListener(topics = "consumer_topic")
+//    public void consume(Person message) {
+//        logger.info(String.format("$$ -> Consumed Message -> %s", message));
+//    }
 }

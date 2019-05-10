@@ -12,9 +12,10 @@ public class Producer {
     private static final String TOPIC = "producer_topic";
 
     @Autowired
-    private KafkaTemplate<String,String> kafkaTemplate;
-    public void sendMessage(long message) {
-        logger.info(String.format("$$ -> Producing message --> %s",message));
-        this.kafkaTemplate.send(TOPIC,message + "");
+    private KafkaTemplate<String, Person> kafkaTemplate;
+
+    public void sendMessage(Person message) {
+        logger.info(String.format("$$ -> Producing message --> %s", message));
+        this.kafkaTemplate.send(TOPIC, message);
     }
 }
