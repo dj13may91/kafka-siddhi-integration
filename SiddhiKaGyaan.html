@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<a target="_blank"
+   href="https://siddhi-io.github.io/siddhi/documentation/siddhi-5.x/quckstart-5.x/#3-using-siddhi-for-the-first-time">
+    Setup </a>
+
+<h3> A sample hello world application </h3>
+
+<code><p style="border: black 2px solid; width: 50%">
+    <br> @App:name("HelloWorldApp") => <b> this is apps name and is mandatory </b>
+    <br>
+    <br> @source(type = 'http', receiver.url = "http://0.0.0.0:8006/cargo",@map(type = 'json'))
+    <br> define stream CargoStream (weight int);
+    <br> <b> this is the input stream that will sending data in through a given receiver.url </b>
+    <br>
+    <br> @sink(type='log', prefix='LOGGER')
+    <br> define stream OutputStream(weight int, totalWeight long);
+    <br> <b> This is the output stream to which data is sent after processing through SiQL </b>
+    <br>
+    <br> @info(name='HelloWorldQuery')
+    <br> from CargoStream
+    <br> select weight, sum(weight) as totalWeight
+    <br> insert into OutputStream;
+    <br> <b> <var> This query takes in data from InputStream (Cargostream), processes using query in between and sends
+    back processed data to output stream (OutputStream) </var></b>
+</p></code>
+
+<p>
+    <b> Stream processing </b>
+    Above takes an integer as an input and sends sum continuously in output stream.
+    using below code we can update this application to show sum of last 3 cargos and average of last three cargos.
+</p>
+<code>
+    <p style="border: black 2px solid; width: 50%">
+        <br>@info(name='HelloWorldQuery')
+        <br>from CargoStream#window.length(3) <b> --- > #window.length(n) allows to save last n inputs into memory for
+        processing</b>
+        <br>select weight, sum(weight) as totalWeight, avg(weight) as averageWeight
+        <br>insert into OutputStream;
+    </p>
+</code>
+
+<code>
+    <p style="border: black 2px solid; width: 50%">
+        <br> <b> 1. Running in docker: </b>
+        <br> <b>docker pull siddhiio/siddhi-runner-alpine:latest</b>
+        <br> 2. Now, once an app is created in siddhi editor, export it to a location ( say SApps) and run in docker
+        using below:
+        <br> <b> docker run -it -p 8006:8006 -v /SApps:/apps siddhiio/siddhi-runner-alpine
+        -Dapps=/apps/HelloWorldModifiedApp.siddhi</b>
+
+        <br> 3. Send events to crgo stream using below:
+        <br><b> curl -X POST http://localhost:8006/cargo --header "Content-Type:application/json" -d
+        '{"event":{"weight":2}}'</b>
+    </p>
+</code>
+
+<h2>SiQL Basics</h2>
+
+<h3>Source</h3>
+Sources receive events via multiple transports and in various data formats, and direct them into streams for processing.
+<div style="border: black 2px solid; width: 50%">
+    <b> Syntax: </b>
+    <code>
+        <pre>
+         @source(type='source_type', static.key1='value', static.key2='value',
+         @map(type='map_type', static.keyY='value', static.keyX='value',
+         @attributes( attribute1='attribute mapping', attributeN='attribute mapping') ) )
+         define stream stream_name> (attribute1 type, attributeN type);
+        </pre>
+    </code>
+</div>
+
+<pre>
+    1. Each @source configuration can have a mapping denoted by the @map annotation that defines how to convert theincoming event format to Siddhi events.
+
+    2. The type parameter of the @map defines the map type to be used in converting the incoming events. The other parameters of @map annotation depends on the mapper selected, and some of its parameters can be optional.
+
+    3. @attributes is an optional annotation used with @map to define custom mapping. When @attributes is not provided,each mapper assumes that the incoming events adheres to its own default message format and attempt to convert the events from that format.
+       By adding the @attributes annotation, users can selectively extract data from the incoming message and assign them to the attributes.
+
+    <b><a target="_blank" href="http://siddhi.io/api/latest/#inmemory-source">In-memory </a> is the only source inbuilt in Siddhi, and all other source types (ex: kafka, RabbitMQ.. ) are implemented as extensions. </b>
+    <b><a target="_blank" href="http://siddhi.io/api/latest/#passthrough-source-mapper">PassThrough</a> is the only source mapper inbuilt in Siddhi, and all other source mappers (ex: JSON, XML... ) are implemented as extensions.</b>
+</pre>
+
+<div style="border: black 2px solid; width: 50%">
+    <pre>
+        <b>Sample Json: </b>
+        {
+          "portfolio":{
+            "stock":{
+              "volume":100,
+              "company":{
+                "symbol":"FB"
+              },
+              "price":55.6
+            }
+          }
+        }
+    </pre>
+    <b>The configuration of the HTTP source and the custom JSON source mapping to achieve the above is as follows: </b>
+    <pre>
+        @source(type='http', receiver.url='http://0.0.0.0:8080/foo',
+        @map(type='json', enclosing.element="$.portfolio",
+        @attributes(symbol = "stock.company.symbol", price = "stock.price",
+        volume = "stock.volume")))
+        define stream StockStream (symbol string, price float, volume long);
+    </pre>
+</div>
+
+<h3>Sink</h3>
+Sink provides a way to publish Siddhi events of a stream to external systems by converting events to their supported
+format.
+<code>
+    <pre style="border: black 2px solid; width: 50%">
+    <b> Syntax: </b>
+        @sink(type='sink type', static.key='value', dynamic.key='{{value}}',
+            @map(type='map type', static.key='value', dynamic.key='{{value}}',
+                @payload('payload mapping')
+            )
+        )
+        define stream stream name (attribute1 type, attributeN type);
+    </pre>
+</code>
+
+<p>The <code>type</code> parameter of the <code>@sink</code> annotation defines the sink type that publishes the events.
+    The other parameters of the <code>@sink</code> annotation depends upon the selected sink type, and here
+    some of its parameters can be optional and/or dynamic.</p>
+
+<h3>Distributed Sink</h3>
+<pre>
+    Distributed Sinks publish events from a defined stream to multiple endpoints using load balancing or partitioning strategies.
+    Any sink can be used as a distributed sink.
+</pre>
+
+<code>
+    <b>Syntax: </b>
+    <pre>
+    To configure distributed sink add the sink configuration to a stream definition by adding the @sink annotation and add the configuration parameters that are common of all the destination endpoints inside it,
+    along with the common parameters also add the @distribution annotation specifying the distribution strategy (i.e. roundRobin or partitioned) and @destination annotations providing each endpoint specific configurations.
+</pre>
+    <pre style="border: black 2px solid; width: 50%">
+        <b>RoundRobin Distributed Sink</b>
+        <code>
+            @sink(type='sink type', common.static.key='value', common.dynamic.key='{{value}}',
+                @map(type='map type', static.key='value', dynamic.key='{{value}}',
+                    @payload('payload mapping')
+                )
+                @distribution(strategy='roundRobin',
+                    @destination(destination.specific.key='value'),
+                    @destination(destination.specific.key='value')))
+            )
+            define stream stream name (attribute1 type, attributeN type);
+        </code>
+    </pre>
+
+    <pre style="border: black 2px solid; width: 50%">
+        <b> Partitioned Distributed Sink </b>
+        <code>
+            @sink(type='sink type', common.static.key='value', common.dynamic.key='{{value}}',
+                @map(type='map type', static.key='value', dynamic.key='{{value}}',
+                    @payload('payload mapping')
+                )
+                @distribution(strategy='partitioned', partitionKey='partition key',
+                    @destination(destination.specific.key='value'),
+                    @destination(destination.specific.key='value')))
+            )
+            define stream stream name (attribute1 type, attributeN type);
+        </code>
+    </pre>
+</code>
+
+<h4>Sink Mapper</h4>
+<pre>
+Each @sink configuration can have a mapping denoted by the @map annotation that defines how to convert Siddhi events tooutgoing messages with the defined format.
+The type parameter of the @map defines the map type to be used in converting the outgoing events.
+</pre>
+
+<h4>Map Payload</h4>
+<pre>
+    @payload is an optional annotation used with @map to define custom mapping. When the @payload annotation is not provided, each mapper maps the outgoing events to its own default event format.
+    The @payload annotation allow users to configure mappers to produce the output payload of their choice, and by using dynamic properties within the payload they can selectively extract and add data from the published Siddhi events.
+    <b>Example: </b>
+    # @payload( 'This is a test message from {{user}}.')
+    # @payload( key1='mapping_1', 'key2'='user : {{user}}')
+    <b>Note: </b> When the @map annotation is not provided <b>@map(type='passThrough')</b> is used as default
+</pre>
+
+<h3>Sink sample queries:</h3>
+<code>
+ <b> No @payload and multi distribution channels</b>
+ <pre style="border: black 2px solid; width: 50%">
+     @sink(type='http', method='POST', headers='Accept-Date:20/02/2017',
+           basic.auth.enabled='true', basic.auth.username='admin',basic.auth.password='admin',
+           @map(type='json'),
+             @distribution(strategy='partitioned', partitionKey='country',
+                @destination(publisher.url='http://localhost:8005/endpoint1'),
+                @destination(publisher.url='http://localhost:8006/endpoint2')))
+     define stream OutputStream (name string, age int, country string)
+  <b>Output:</b>
+     {
+       "event":{
+         "name":"Paul",
+         "age":20,
+         "country":"UK"
+       }
+     }
+ </pre>
+
+ <b> Custom payload/ map payload </b>
+ <pre style="border: black 2px solid; width: 50%">
+     @sink(type='http', publisher.url='http://localhost:8005/stocks',
+           @map(type='json', validate.json='true', enclosing.element='$.Portfolio',
+                @payload("""{"StockData":{ "Symbol":"{{symbol}}", "Price":{{price}} }}""")))
+     define stream StockStream (symbol string, price float, volume long);
+ <b> Output: </b>
+     {
+       "Portfolio":{
+         "StockData":{
+           "Symbol":"GOOG",
+           "Price":55.6
+         }
+       }
+     }
+ </pre>
+</code>
+
+
+<h3>title</h3>
+<code>
+    <br> <b> </b>
+    <pre style="border: black 2px solid; width: 50%">
+        test
+    </pre>
+</code>
+
+</body>
+</html>
